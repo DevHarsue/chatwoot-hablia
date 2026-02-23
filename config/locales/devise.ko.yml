@@ -19,7 +19,7 @@ ko:
       confirmation_instructions:
         subject: "확인 절차"
       reset_password_instructions:
-        subject: "Reset password instructions"
+        subject: "Set up your Hablia password"
       unlock_instructions:
         subject: "Unlock instructions"
       password_change:
