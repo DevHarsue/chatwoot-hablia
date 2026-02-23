@@ -19,7 +19,7 @@ es:
       confirmation_instructions:
         subject: "Instrucciones de confirmación"
       reset_password_instructions:
-        subject: "Configura tu contraseña de Hablia"
+        subject: "Configura el acceso a tu panel de atención - Hablia CRM"
       unlock_instructions:
         subject: "Instrucciones de desbloqueo"
       password_change:

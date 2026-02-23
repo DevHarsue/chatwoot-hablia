@@ -21,6 +21,7 @@ class DeviseOverrides::PasswordsController < Devise::PasswordsController
     @recoverable = User.find_by(reset_password_token: reset_password_token)
     if @recoverable && reset_password_and_confirmation(@recoverable)
       send_auth_headers(@recoverable)
+      notify_password_reset(@recoverable)
       render partial: 'devise/auth', formats: [:json], locals: { resource: @recoverable }
     else
       render json: { message: 'Invalid token', redirect_url: '/' }, status: :unprocessable_entity
@@ -36,6 +37,13 @@ class DeviseOverrides::PasswordsController < Devise::PasswordsController
     recoverable.confirmation_token = nil
     recoverable.reset_password_sent_at = nil
     recoverable.save!
+  end
+
+  def notify_password_reset(user)
+    HabliaWebhookService.deliver('set_new_password', {
+      user: { id: user.id, email: user.email, name: user.name },
+      accounts: user.accounts.map { |acc| { id: acc.id, name: acc.name } }
+    })
   end
 
   def build_response(message, status)
