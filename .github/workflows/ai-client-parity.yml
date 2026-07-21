@@ -38,7 +38,11 @@ permissions:
 jobs:
   parity:
     name: Validate Claude x Codex parity
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -53,4 +57,4 @@ jobs:
       - name: Run parity fixtures
         run: node scripts/ai/test_client_parity.mjs
       - name: Run pre-review gate fixtures
-        run: python3 scripts/ai/test_pre_review_gate.py
+        run: python scripts/ai/test_pre_review_gate.py

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -66,7 +67,7 @@ def assert_code(result: subprocess.CompletedProcess[str], expected: int, label: 
         raise AssertionError(f"{label}: esperado {expected}, obtuvo {result.returncode}: {result.stderr}")
 
 
-def assert_adapters() -> None:
+def assert_adapters() -> str:
     for wrapper, core_name in (
         (ROOT / ".claude" / "hooks" / "diff_hash.py", "diff_hash.py"),
         (CLAUDE_GATE, "pre_review_gate.py"),
@@ -99,13 +100,34 @@ def assert_adapters() -> None:
         if isinstance(registration, dict)
     ):
         raise AssertionError(".claude/settings.json: falta registrar PreToolUse/Bash para el gate portable")
+    return config
+
+
+def assert_windows_adapter(repo: Path, config: str) -> None:
+    if sys.platform != "win32":
+        return
+    match = re.search(r'^command_windows = "(.*)"$', config, flags=re.MULTILINE)
+    if not match:
+        raise AssertionError(".codex/config.toml: falta command_windows para el gate portable")
+    command = json.loads(f'"{match.group(1)}"')
+    result = subprocess.run(
+        command,
+        cwd=repo,
+        text=True,
+        input=json.dumps({"tool_input": {"command": "git push origin feature/hook-test"}}),
+        capture_output=True,
+        check=False,
+        shell=True,
+    )
+    assert_code(result, 2, "el adaptador de Windows recibe el payload del gate")
 
 
 def main() -> int:
-    assert_adapters()
+    config = assert_adapters()
     with tempfile.TemporaryDirectory(prefix="hablia-pre-review-") as temporary:
         parent = Path(temporary)
         repo = create_repo(parent)
+        assert_windows_adapter(repo, config)
         push = {"tool_input": {"command": "git push origin feature/hook-test"}}
 
         assert_code(run_gate(repo, push), 2, "bloquea push sin marcador")
@@ -163,6 +185,38 @@ def main() -> int:
             ),
             2,
             "rechaza un wrapper de privilegios con argumentos",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "/usr/bin/git push origin feature/hook-test"}},
+            ),
+            2,
+            "rechaza un launcher Git por ruta absoluta",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "FOO=1 git push origin feature/hook-test"}},
+            ),
+            2,
+            "rechaza una asignación de entorno antes del push",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "exec git push origin feature/hook-test"}},
+            ),
+            2,
+            "rechaza exec antes del push",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "/usr/bin/gh pr create --base main"}},
+            ),
+            2,
+            "rechaza un launcher GitHub por ruta absoluta",
         )
         assert_code(
             run_gate(

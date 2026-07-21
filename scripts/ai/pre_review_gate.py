@@ -140,6 +140,15 @@ def main() -> int:
             "BLOCKED: no se permiten wrappers de proceso para publicar. "
             "Ejecutá git o gh directamente, o usá las formas literales documentadas."
         )
+    if re.search(
+        r"(^|[&|;(\n])\s*(?:[A-Za-z_][A-Za-z0-9_]*=[^\s&|;]+\s+|"
+        r"exec\s+|(?:/[A-Za-z0-9._-]+)+/(?:git|gh)\b)",
+        command,
+    ):
+        block(
+            "BLOCKED: no se permiten launchers alternos para publicar. "
+            "Ejecutá git o gh directamente, o usá las formas literales documentadas."
+        )
 
     direct_prefix = r"(?:(?:env|command)(?:\s+[^\s&|;]+)*\s+)?"
     is_push = bool(
