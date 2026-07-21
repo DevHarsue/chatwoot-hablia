@@ -114,6 +114,16 @@ def main() -> int:
             2,
             "bloquea PR sin marcador",
         )
+        protected = create_repo(parent, "rama protegida")
+        run(["git", "switch", "main"], protected)
+        assert_code(
+            run_gate(
+                protected,
+                {"tool_input": {"command": "git push origin feature/no-revisada"}},
+            ),
+            2,
+            "rechaza publicar desde una rama protegida",
+        )
         write_marker(repo)
         assert_code(run_gate(repo, push), 0, "permite payload Claude con marcador válido")
         assert_code(

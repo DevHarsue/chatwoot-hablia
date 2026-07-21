@@ -112,7 +112,10 @@ def main() -> int:
 
     rc, branch = run(["git", "branch", "--show-current"], cwd)
     if is_push and (branch in {"main", "develop"} or branch.startswith("release/")):
-        return 0
+        block(
+            "BLOCKED: no se permite push directo desde una rama protegida. "
+            "Usá una rama de trabajo y el PR correspondiente."
+        )
 
     marker_path = Path(repository_root) / MARKER_RELATIVE_PATH
     try:
