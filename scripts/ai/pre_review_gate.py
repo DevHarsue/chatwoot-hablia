@@ -96,8 +96,13 @@ def main() -> int:
             "Ejecutá el flujo pre-review para generar una evidencia válida."
         )
 
-    is_push = bool(re.search(r"(^|[&|;\n])\s*git\b[^&|;\n]*\bpush\b", command))
-    is_pr = bool(re.search(r"(^|[&|;\n])\s*gh\s+pr\s+create\b", command))
+    direct_prefix = r"(?:(?:env|command)\s+)*"
+    is_push = bool(
+        re.search(rf"(^|[&|;\n])\s*{direct_prefix}git\b[^&|;\n]*\bpush\b", command)
+    )
+    is_pr = bool(
+        re.search(rf"(^|[&|;\n])\s*{direct_prefix}gh\s+pr\s+create\b", command)
+    )
     if not is_push and not is_pr:
         return 0
     if is_push and re.search(r"--tags|--delete", command):

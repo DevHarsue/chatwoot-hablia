@@ -114,6 +114,16 @@ def main() -> int:
             2,
             "bloquea PR sin marcador",
         )
+        assert_code(
+            run_gate(repo, {"tool_input": {"command": "env git push origin feature/hook-test"}}),
+            2,
+            "bloquea push con env sin marcador",
+        )
+        assert_code(
+            run_gate(repo, {"tool_input": {"command": "env gh pr create --base main"}}),
+            2,
+            "bloquea PR con env sin marcador",
+        )
         protected = create_repo(parent, "rama protegida")
         run(["git", "switch", "main"], protected)
         assert_code(
@@ -123,6 +133,25 @@ def main() -> int:
             ),
             2,
             "rechaza publicar desde una rama protegida",
+        )
+        run(["git", "switch", "-c", "develop"], protected)
+        assert_code(
+            run_gate(
+                protected,
+                {"tool_input": {"command": "git push origin feature/no-revisada"}},
+            ),
+            2,
+            "rechaza publicar desde develop",
+        )
+        run(["git", "switch", "main"], protected)
+        run(["git", "switch", "-c", "release/1.0"], protected)
+        assert_code(
+            run_gate(
+                protected,
+                {"tool_input": {"command": "git push origin feature/no-revisada"}},
+            ),
+            2,
+            "rechaza publicar desde una release",
         )
         write_marker(repo)
         assert_code(run_gate(repo, push), 0, "permite payload Claude con marcador válido")
