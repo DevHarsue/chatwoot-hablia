@@ -468,6 +468,17 @@ def main() -> int:
         run(["git", "commit", "-m", "changed"], repo)
         assert_code(run_gate(repo, push), 2, "invalida marcador cuando cambia el diff")
 
+        trailing_whitespace = create_repo(parent, "espacio final")
+        write_marker(trailing_whitespace)
+        (trailing_whitespace / "tracked.txt").write_text("feature \n", encoding="utf-8")
+        run(["git", "add", "tracked.txt"], trailing_whitespace)
+        run(["git", "commit", "-m", "trailing whitespace"], trailing_whitespace)
+        assert_code(
+            run_gate(trailing_whitespace, push),
+            2,
+            "invalida marcador cuando cambia un espacio final",
+        )
+
         spaced = create_repo(parent, "repo con espacios")
         write_marker(spaced)
         command = f"git -C '{spaced}' push origin feature/hook-test"

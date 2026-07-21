@@ -31,7 +31,7 @@ def diff_hash(base: str, cwd: str | Path | None = None) -> str:
     if process.returncode != 0:
         details = (process.stderr or b"").decode("utf-8", "replace").strip()
         raise DiffHashError(details or f"git diff falló contra {base}")
-    return hashlib.sha256((process.stdout or b"").strip()).hexdigest()
+    return hashlib.sha256(process.stdout or b"").hexdigest()
 
 
 def usage() -> int:

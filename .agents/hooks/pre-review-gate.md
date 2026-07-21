@@ -10,5 +10,7 @@ deployment authority. The Claude adapter invokes its compatibility wrapper;
 the Codex adapter invokes `scripts/ai/pre_review_gate.py` directly.
 
 The gate validates literal Git/GitHub shell operations submitted to the client.
-It is a workflow safeguard, not a sandbox for arbitrary local programs;
+Literal means the direct, documented Git/GitHub forms; escaped commands,
+shell control flow, and interpreter-evaluated strings are not parsed. It is a
+workflow safeguard, not a sandbox for arbitrary local programs;
 protected branches, required reviews, and server-side checks remain authoritative.
