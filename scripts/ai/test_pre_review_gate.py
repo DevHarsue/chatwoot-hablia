@@ -228,6 +228,34 @@ def main() -> int:
         assert_code(
             run_gate(
                 repo,
+                {
+                    "tool_input": {
+                        "command": (
+                            "git --git-dir=/tmp/otro push origin feature/hook-test"
+                        )
+                    }
+                },
+            ),
+            2,
+            "rechaza un repositorio alterno con git-dir",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {
+                    "tool_input": {
+                        "command": (
+                            "git --work-tree /tmp/otro push origin feature/hook-test"
+                        )
+                    }
+                },
+            ),
+            2,
+            "rechaza un worktree alterno",
+        )
+        assert_code(
+            run_gate(
+                repo,
                 {"tool_input": {"command": "git push --delete origin stale"}},
             ),
             2,

@@ -171,6 +171,11 @@ def main() -> int:
             "BLOCKED: el wrapper de publicación usa argumentos no verificables. "
             "Ejecutá git o gh directamente, o usá `env git` / `command git`."
         )
+    if is_push and re.search(r"--(?:git-dir|work-tree)(?:=|\s)", command):
+        block(
+            "BLOCKED: el push no puede seleccionar otro repositorio con --git-dir "
+            "ni --work-tree. Ejecutalo desde el worktree revisado."
+        )
     if is_push and re.search(
         r"(?:--(?:tags|delete|all|mirror|force(?:-with-lease)?)(?:=|\s|$)|"
         r"-[df](?:\s|$)|\s+[+][^\s&|;]+|\s+:[^\s&|;]+|:refs/tags/|"
