@@ -56,8 +56,10 @@ def command_from_payload(payload: object) -> str:
 def command_target_path(command: str) -> str | None:
     quoted = r'("[^"]+"|\'[^\']+\'|[^\s&|;]+)'
     git_candidates = list(re.finditer(rf"\s-C\s+{quoted}", command))
-    shell_cd = re.match(rf"\s*cd\s+{quoted}", command)
-    candidates = [*git_candidates, *([shell_cd] if shell_cd else [])]
+    shell_candidates = list(
+        re.finditer(rf"(?<![A-Za-z0-9_.-])cd\s+{quoted}", command)
+    )
+    candidates = [*git_candidates, *shell_candidates]
     if not candidates:
         return None
     if len(candidates) != 1:
@@ -105,7 +107,7 @@ def push_uses_reviewed_source(command: str, branch: str) -> bool:
         return False
     refspecs = arguments[index + 1 :]
     if not refspecs:
-        return True
+        return False
     if len(refspecs) != 1:
         return False
     return refspecs[0] in {"HEAD", branch, f"refs/heads/{branch}"}
@@ -124,6 +126,15 @@ def main() -> int:
         block(
             "BLOCKED: no se permite escribir el marcador directamente. "
             "Ejecutá el flujo pre-review para generar una evidencia válida."
+        )
+
+    if re.search(
+        r"(^|[&|;\n])\s*(?:sudo|doas|nice|nohup|time)\s+(?:git|gh)\b",
+        command,
+    ):
+        block(
+            "BLOCKED: no se permiten wrappers de proceso para publicar. "
+            "Ejecutá git o gh directamente, o usá las formas literales documentadas."
         )
 
     direct_prefix = r"(?:(?:env|command)(?:\s+[^\s&|;]+)*\s+)?"

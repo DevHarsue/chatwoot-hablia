@@ -140,6 +140,14 @@ def main() -> int:
             2,
             "rechaza command con argumentos antes del PR",
         )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "sudo git push origin feature/hook-test"}},
+            ),
+            2,
+            "rechaza un wrapper de privilegios antes del push",
+        )
         protected = create_repo(parent, "rama protegida")
         run(["git", "switch", "main"], protected)
         assert_code(
@@ -171,6 +179,11 @@ def main() -> int:
         )
         write_marker(repo)
         assert_code(run_gate(repo, push), 0, "permite payload Claude con marcador válido")
+        assert_code(
+            run_gate(repo, {"tool_input": {"command": "git push origin"}}),
+            2,
+            "rechaza push sin fuente literal revisada",
+        )
         assert_code(
             run_gate(repo, push, CLAUDE_GATE),
             0,
@@ -331,6 +344,20 @@ def main() -> int:
             ),
             2,
             "rechaza múltiples rutas Git candidatas",
+        )
+        assert_code(
+            run_gate(
+                parent,
+                {
+                    "tool_input": {
+                        "command": (
+                            f"cd '{spaced}'; cd '{repo}'; git push origin feature/hook-test"
+                        )
+                    }
+                },
+            ),
+            2,
+            "rechaza múltiples directorios shell candidatos",
         )
     print("OK: gate portable de pre-review validado")
     return 0

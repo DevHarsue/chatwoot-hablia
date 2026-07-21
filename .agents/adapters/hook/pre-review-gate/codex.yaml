@@ -20,7 +20,7 @@ validation:
     - "python3 scripts/ai/test_pre_review_gate.py"
 drift:
   strategy: "sha256"
-  source_sha256: "203abd6c93ae5b99fbbbb401bf4b033d01239e820e91e3409ceeff3261de3944"
+  source_sha256: "69264e0084d52f93020d5c154e9da22d7468ee7de530d19542e073b2c99de6d3"
   output_sha256: "3e7f613fd7a29f02170bd598e06caa9231068ae06f33f853afe898832ac3356f"
 owner: "Harwing Martinez y Francisco Maldonado"
 exception_ids: []
