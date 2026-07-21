@@ -96,7 +96,7 @@ def main() -> int:
             "Ejecutá el flujo pre-review para generar una evidencia válida."
         )
 
-    direct_prefix = r"(?:(?:env|command)\s+)*"
+    direct_prefix = r"(?:(?:env|command)(?:\s+[^\s&|;]+)*\s+)?"
     is_push = bool(
         re.search(rf"(^|[&|;\n])\s*{direct_prefix}git\b[^&|;\n]*\bpush\b", command)
     )
@@ -105,10 +105,23 @@ def main() -> int:
     )
     if not is_push and not is_pr:
         return 0
-    if is_push and re.search(r"--tags|--delete", command):
+    if re.search(
+        r"(^|[&|;\n])\s*(?:env|command)\s+(?!git\b|gh\b)", command
+    ):
         block(
-            "BLOCKED: el gate no permite publicar tags ni borrar refs. "
-            "Usá el flujo de release o mantenimiento aprobado."
+            "BLOCKED: el wrapper de publicación usa argumentos no verificables. "
+            "Ejecutá git o gh directamente, o usá `env git` / `command git`."
+        )
+    if is_push and re.search(
+        r"(?:--(?:tags|delete|all|mirror|force(?:-with-lease)?)(?:=|\s|$)|"
+        r"\s+:[^\s&|;]+|:refs/tags/|"
+        r":(?:refs/heads/)?(?:main|develop|release/[^\s&|;]+))",
+        command,
+        re.IGNORECASE,
+    ):
+        block(
+            "BLOCKED: el push incluye tags, borrados, opciones destructivas o una "
+            "rama protegida como destino. Usá el flujo de release o el PR aprobado."
         )
     cwd = command_target_path(command)
     rc, repository_root = run(["git", "rev-parse", "--show-toplevel"], cwd)

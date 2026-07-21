@@ -124,6 +124,22 @@ def main() -> int:
             2,
             "bloquea PR con env sin marcador",
         )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "env SAFE=1 git push origin feature/hook-test"}},
+            ),
+            2,
+            "rechaza env con argumentos antes del push",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "command -- gh pr create --base main"}},
+            ),
+            2,
+            "rechaza command con argumentos antes del PR",
+        )
         protected = create_repo(parent, "rama protegida")
         run(["git", "switch", "main"], protected)
         assert_code(
@@ -179,6 +195,51 @@ def main() -> int:
             ),
             2,
             "rechaza borrar refs aun con marcador válido",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "git push origin :stale"}},
+            ),
+            2,
+            "rechaza un refspec de borrado",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "git push origin HEAD:refs/tags/v1"}},
+            ),
+            2,
+            "rechaza un refspec de tag",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "git push origin HEAD:main"}},
+            ),
+            2,
+            "rechaza publicar hacia main",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "git push origin feature/hook-test:develop"}},
+            ),
+            2,
+            "rechaza publicar hacia develop",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "git push origin HEAD:release/1.0"}},
+            ),
+            2,
+            "rechaza publicar hacia una release",
+        )
+        assert_code(
+            run_gate(repo, {"tool_input": {"command": "git push --mirror origin"}}),
+            2,
+            "rechaza mirror push",
         )
         assert_code(
             run_gate(repo, {"tool_input": {"command": "echo forged > .agents/.pre-review-passed"}}),
