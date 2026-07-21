@@ -494,6 +494,24 @@ def main() -> int:
             "invalida marcador cuando cambia un espacio final",
         )
 
+        quoted_directory = create_repo(parent, "directorio citado")
+        write_marker(quoted_directory)
+        assert_code(
+            run_gate(
+                parent,
+                {
+                    "tool_input": {
+                        "command": (
+                            f"printf 'cd {quoted_directory}'; "
+                            "git push origin feature/hook-test"
+                        )
+                    }
+                },
+            ),
+            2,
+            "no interpreta un cd dentro de una cadena impresa",
+        )
+
         spaced = create_repo(parent, "repo con espacios")
         write_marker(spaced)
         command = f"git -C '{spaced}' push origin feature/hook-test"

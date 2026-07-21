@@ -60,9 +60,7 @@ def command_target_path(command: str) -> str | None:
         git_candidates.extend(
             re.finditer(rf"\s-C\s+{quoted}", push_segment.group(0))
         )
-    shell_candidates = list(
-        re.finditer(rf"(?<![A-Za-z0-9_.-])cd\s+{quoted}", command)
-    )
+    shell_candidates = list(re.finditer(rf"(?:^|[&|;\n])\s*cd\s+{quoted}", command))
     candidates = [*git_candidates, *shell_candidates]
     if not candidates:
         return None
