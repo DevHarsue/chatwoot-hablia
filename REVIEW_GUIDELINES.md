@@ -44,8 +44,10 @@ seguridad, el contrato público ni la entrega actual.
 - Nunca permitir que una configuración exclusiva de Claude o Codex redefina el
   núcleo compartido o quede sin adaptador equivalente o excepción AIC vigente.
 - Nunca restaurar `CLAUDE.md` como symlink ni permitir imports rotos.
-- Nunca permitir un `git push` o `gh pr create` de una rama de trabajo sin el
-  marcador `.agents/.pre-review-passed` que coincida con el diff actual.
+- Nunca permitir una invocación literal de `git push` o `gh pr create` de una
+  rama de trabajo sin el marcador `.agents/.pre-review-passed` que coincida
+  con el diff actual. El gate local no es un sandbox de programas arbitrarios;
+  los controles server-side siguen siendo obligatorios.
 - Nunca modificar código de producto, dependencias o lockfiles en una tarea de
   documentación o tooling salvo que la issue lo requiera explícitamente.
 

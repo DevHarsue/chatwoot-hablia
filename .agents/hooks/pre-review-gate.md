@@ -8,3 +8,7 @@ inspect `PreToolUse` events for `Bash`, validate the ignored marker at
 Client adapters register the same portable gate core without credentials or
 deployment authority. The Claude adapter invokes its compatibility wrapper;
 the Codex adapter invokes `scripts/ai/pre_review_gate.py` directly.
+
+The gate validates literal Git/GitHub shell operations submitted to the client.
+It is a workflow safeguard, not a sandbox for arbitrary local programs;
+protected branches, required reviews, and server-side checks remain authoritative.
