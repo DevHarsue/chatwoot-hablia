@@ -148,6 +148,14 @@ def main() -> int:
             2,
             "rechaza un wrapper de privilegios antes del push",
         )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "sudo -u root git push origin feature/hook-test"}},
+            ),
+            2,
+            "rechaza un wrapper de privilegios con argumentos",
+        )
         protected = create_repo(parent, "rama protegida")
         run(["git", "switch", "main"], protected)
         assert_code(

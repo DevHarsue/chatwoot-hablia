@@ -129,7 +129,7 @@ def main() -> int:
         )
 
     if re.search(
-        r"(^|[&|;\n])\s*(?:sudo|doas|nice|nohup|time)\s+(?:git|gh)\b",
+        r"(^|[&|;\n])\s*(?:sudo|doas|nice|nohup|time)(?:\s+[^\s&|;]+)*\s+(?:git|gh)\b",
         command,
     ):
         block(
