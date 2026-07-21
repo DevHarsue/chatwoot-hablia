@@ -101,8 +101,10 @@ def main() -> int:
     if not is_push and not is_pr:
         return 0
     if is_push and re.search(r"--tags|--delete", command):
-        return 0
-
+        block(
+            "BLOCKED: el gate no permite publicar tags ni borrar refs. "
+            "Usá el flujo de release o mantenimiento aprobado."
+        )
     cwd = command_target_path(command)
     rc, repository_root = run(["git", "rev-parse", "--show-toplevel"], cwd)
     if rc != 0 or not repository_root:

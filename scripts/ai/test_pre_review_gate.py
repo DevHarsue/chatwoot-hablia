@@ -128,7 +128,19 @@ def main() -> int:
             0,
             "permite payload alternativo del cliente",
         )
-        assert_code(run_gate(repo, {"tool_input": {"command": "git push --tags"}}), 0, "permite tags")
+        assert_code(
+            run_gate(repo, {"tool_input": {"command": "git push --tags"}}),
+            2,
+            "rechaza publicar tags aun con marcador válido",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "git push --delete origin stale"}},
+            ),
+            2,
+            "rechaza borrar refs aun con marcador válido",
+        )
         assert_code(
             run_gate(repo, {"tool_input": {"command": "echo forged > .agents/.pre-review-passed"}}),
             2,
