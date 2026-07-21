@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -86,6 +87,30 @@ def is_direct_marker_write(command: str) -> bool:
     return bool(re.search(rf"(?:>>?|\btee\b)[^\n]*?{marker}", command))
 
 
+def push_uses_reviewed_source(command: str, branch: str) -> bool:
+    match = re.search(r"\bgit\b[^&|;\n]*\bpush\b(?P<args>[^&|;\n]*)", command)
+    if not match:
+        return False
+    try:
+        arguments = shlex.split(match.group("args"), comments=True)
+    except ValueError:
+        return False
+
+    index = 0
+    while index < len(arguments) and arguments[index].startswith("-"):
+        if arguments[index] not in {"-u", "--set-upstream"}:
+            return False
+        index += 1
+    if index >= len(arguments) or arguments[index] != "origin":
+        return False
+    refspecs = arguments[index + 1 :]
+    if not refspecs:
+        return True
+    if len(refspecs) != 1:
+        return False
+    return refspecs[0] in {"HEAD", branch, f"refs/heads/{branch}"}
+
+
 def main() -> int:
     try:
         payload = json.loads(sys.stdin.read())
@@ -139,6 +164,11 @@ def main() -> int:
         block(
             "BLOCKED: no se permite push directo desde una rama protegida. "
             "Usá una rama de trabajo y el PR correspondiente."
+        )
+    if is_push and not push_uses_reviewed_source(command, branch):
+        block(
+            "BLOCKED: el push debe usar HEAD o la rama actual revisada como única fuente "
+            "y publicar mediante origin."
         )
 
     marker_path = Path(repository_root) / MARKER_RELATIVE_PATH

@@ -267,6 +267,19 @@ def main() -> int:
         assert_code(
             run_gate(
                 repo,
+                {"tool_input": {"command": "git push origin refs/tags/v1:feature/unreviewed"}},
+            ),
+            2,
+            "rechaza usar un tag como fuente de un refspec",
+        )
+        assert_code(
+            run_gate(repo, {"tool_input": {"command": "git push origin tag-v1"}}),
+            2,
+            "rechaza publicar una fuente distinta a la rama revisada",
+        )
+        assert_code(
+            run_gate(
+                repo,
                 {"tool_input": {"command": "git push origin +HEAD:feature/hook-test"}},
             ),
             2,
