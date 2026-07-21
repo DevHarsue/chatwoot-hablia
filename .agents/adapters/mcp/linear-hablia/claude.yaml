@@ -1,0 +1,21 @@
+schema_version: 1
+resource:
+  type: "mcp"
+  name: "linear-hablia"
+source: ".agents/mcp/linear-hablia.md"
+client: "claude"
+outputs:
+  - ".mcp.json"
+transformations:
+  - "Renders the Claude-compatible MCP manifest without credentials."
+capability_mapping:
+  external_write: "Verified Hablia Linear workspace only"
+validation:
+  commands:
+    - "node scripts/ai/check-client-parity.mjs"
+drift:
+  strategy: "sha256"
+  source_sha256: "bdd0191134164bd388690a184bfde8c63e857a60cb5b5abf8671aaa5920a6223"
+  output_sha256: "0b97a88b635763e934c2fc7bfb31615592b50f9d79a9f45f6e866a9bed2a2675"
+owner: "Harwing Martinez y Francisco Maldonado"
+exception_ids: []

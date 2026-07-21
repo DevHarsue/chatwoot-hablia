@@ -1,0 +1,21 @@
+schema_version: 1
+resource:
+  type: "instruction"
+  name: "chatwoot-core"
+source: "AGENTS.md"
+client: "claude"
+outputs:
+  - "CLAUDE.md"
+transformations:
+  - "Imports shared rules through a regular cross-platform file and retains Claude discovery wiring only."
+capability_mapping:
+  repository_write: "Claude project instructions"
+validation:
+  commands:
+    - "node scripts/ai/check-client-parity.mjs"
+drift:
+  strategy: "sha256"
+  source_sha256: "6d93cb81e50ae3aac0001d459003cdafaed9118455cd0cd8d79191c15f028aa4"
+  output_sha256: "cbe67a260ab9f9d8a6fa04cefe5da144e6917d244bf8316eedb711e6524836bb"
+owner: "Harwing Martinez y Francisco Maldonado"
+exception_ids: []

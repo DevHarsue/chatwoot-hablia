@@ -1,113 +1,175 @@
-# Chatwoot Development Guidelines
+# Hablia CRM Chatwoot — Shared Agent Instructions
 
-## Build / Test / Lint
+## Scope and precedence
 
-- **Setup**: `bundle install && pnpm install`
-- **Run Dev**: `pnpm dev` or `overmind start -f ./Procfile.dev`
-- **Seed Local Test Data**: `bundle exec rails db:seed` (quickly populates minimal data for standard feature verification)
-- **Seed Search Test Data**: `bundle exec rails search:setup_test_data` (bulk fixture generation for search/performance/manual load scenarios)
-- **Seed Account Sample Data (richer test data)**: `Seeders::AccountSeeder` is available as an internal utility and is exposed through Super Admin `Accounts#seed`, but can be used directly in dev workflows too:
-  - UI path: Super Admin → Accounts → Seed (enqueues `Internal::SeedAccountJob`).
-  - CLI path: `bundle exec rails runner "Internal::SeedAccountJob.perform_now(Account.find(<id>))"` (or call `Seeders::AccountSeeder.new(account: Account.find(<id>)).perform!` directly).
-- **Lint JS/Vue**: `pnpm eslint` / `pnpm eslint:fix`
-- **Lint Ruby**: `bundle exec rubocop -a`
-- **Test JS**: `pnpm test` or `pnpm test:watch`
-- **Test Ruby**: `bundle exec rspec spec/path/to/file_spec.rb`
-- **Single Test**: `bundle exec rspec spec/path/to/file_spec.rb:LINE_NUMBER`
-- **Run Project**: `overmind start -f Procfile.dev`
-- **Ruby Version**: Manage Ruby via `rbenv` and install the version listed in `.ruby-version` (e.g., `rbenv install $(cat .ruby-version)`)
-- **rbenv setup**: Before running any `bundle` or `rspec` commands, init rbenv in your shell (`eval "$(rbenv init -)"`) so the correct Ruby/Bundler versions are used
-- Always prefer `bundle exec` for Ruby CLI tasks (rspec, rake, rubocop, etc.)
+These rules apply to the entire Hablia Chatwoot fork. A more specific
+`AGENTS.md` may add local constraints, but it must not weaken the security,
+validation, enterprise-compatibility, or delivery requirements in this file.
+`CLAUDE.md` is only a discovery adapter; this file is the canonical source for
+shared Claude and Codex behavior.
 
-## Code Style
+## Repository purpose and boundaries
 
-- **Ruby**: Follow RuboCop rules (150 character max line length)
-- **Vue/JS**: Use ESLint (Airbnb base + Vue 3 recommended)
-- **Vue Components**: Use PascalCase
-- **Events**: Use camelCase
-- **I18n**: No bare strings in templates; use i18n
-- **Error Handling**: Use custom exceptions (`lib/custom_exceptions/`)
-- **Models**: Validate presence/uniqueness, add proper indexes
-- **Type Safety**: Use PropTypes in Vue, strong params in Rails
-- **Naming**: Use clear, descriptive names with consistent casing
-- **Vue API**: Always use Composition API with `<script setup>` at the top
+This repository is Hablia's maintained fork of Chatwoot, an omnichannel support
+platform. It contains the Rails API and jobs, the Vue dashboard and widget, and
+the Enterprise overlay.
 
-## Styling
+- Keep migration-only work separate from product behavior and upstream syncs.
+- Prefer the smallest change that preserves the fork's existing contracts.
+- Check both `app/` and `enterprise/` before changing shared runtime behavior.
+- Keep public APIs, webhooks, channel integrations, background jobs, and
+  request/response contracts backward compatible unless the issue says otherwise.
+- Use repository feature flags and the Hablia rollout policy for new or changed
+  product behavior. Do not add a functional flag for documentation/tooling-only
+  migrations.
 
-- **Tailwind Only**:  
-  - Do not write custom CSS  
-  - Do not use scoped CSS  
-  - Do not use inline styles  
-  - Always use Tailwind utility classes  
-- **Colors**: Refer to `tailwind.config.js` for color definitions
+The main stack is Ruby 3.4.4, Rails 7.1, PostgreSQL, Redis/Sidekiq, Node 24,
+pnpm 10, Vue 3, Vite, Vitest, Tailwind, RSpec, RuboCop, and ESLint. See
+`docs/ai/chatwoot-development-reference.md` for directories, local services,
+seed workflows, and the validation matrix.
 
-## General Guidelines
+## Working agreement
 
-- MVP focus: Least code change, happy-path only
-- No unnecessary defensive programming
-- Ship the happy path first: limit guards/fallbacks to what production has proven necessary, then iterate
-- Prefer minimal, readable code over elaborate abstractions; clarity beats cleverness
-- Break down complex tasks into small, testable units
-- Iterate after confirmation
-- Avoid writing specs unless explicitly asked
-- Remove dead/unreachable/unused code
-- Don’t write multiple versions or backups for the same logic — pick the best approach and implement it
-- Prefer `with_modified_env` (from spec helpers) over stubbing `ENV` directly in specs
-- Specs in parallel/reloading environments: prefer comparing `error.class.name` over constant class equality when asserting raised errors
+1. Read the Linear issue, move it to `In Progress`, and assign it before editing.
+2. Normal work branches from updated `develop`; use the exact Linear branch
+   name in an isolated worktree. Hotfixes follow the workspace Git Flow rules.
+3. Keep one issue per branch and preserve unrelated user changes.
+4. Read the complete implementation, tests, routes, jobs, and Enterprise overlay
+   related to a runtime change before editing.
+5. Run the relevant validations below and attach evidence to the PR.
+6. Run the portable pre-review before push or PR, applying
+   `REVIEW_GUIDELINES.md` as the repository review contract.
+7. Do not commit, push, open or merge a PR, deploy, or write to production
+   without explicit user approval.
 
-## Codex Worktree Workflow
+## Setup, development, and validation
 
-- Use a separate git worktree + branch per task to keep changes isolated.
-- Keep Codex-specific local setup under `.codex/` and use `Procfile.worktree` for worktree process orchestration.
-- The setup workflow in `.codex/environments/environment.toml` should dynamically generate per-worktree DB/port values (Rails, Vite, Redis DB index) to avoid collisions.
-- Start each worktree with its own Overmind socket/title so multiple instances can run at the same time.
+Initialize `rbenv` before Ruby commands and use the versions pinned by
+`.ruby-version` and `package.json`.
 
-## Commit Messages
+```bash
+eval "$(rbenv init -)"
+bundle install
+pnpm install --frozen-lockfile
+pnpm dev
+```
 
-- Prefer Conventional Commits: `type(scope): subject` (scope optional)
-- Example: `feat(auth): add user authentication`
-- Don't reference Claude in commit messages
+Always prefer `bundle exec` for Ruby CLIs. `make setup` is the repository
+shortcut for dependency installation. The standard development process may
+also be started with `overmind start -f Procfile.dev`.
 
-## PR Description Format
+| Gate | Command | Required when |
+|---|---|---|
+| Ruby lint | `bundle exec rubocop --parallel` | Every Ruby change |
+| JS/Vue lint | `pnpm eslint` | Every JS/Vue change |
+| Ruby tests | `bundle exec rspec spec/path/to/file_spec.rb` | Every affected Ruby behavior |
+| JS/Vue tests | `pnpm test` | Every affected frontend behavior |
+| Production asset build | `RAILS_ENV=production bundle exec rake assets:precompile` | Build/config/asset changes, with non-secret CI-equivalent env |
+| Dependency security | `bundle exec bundle-audit check --update` | Dependency or release-sensitive changes |
+| AI parity | `node scripts/ai/check-client-parity.mjs` | Instructions, adapters, hooks, MCP, or AI tooling |
+| AI parity fixtures | `node scripts/ai/test_client_parity.mjs` | Changes to the parity validator |
+| Pre-review gate fixtures | `python3 scripts/ai/test_pre_review_gate.py` | Changes to pre-review tooling |
 
-- Start with a short, user-facing paragraph describing the product change.
-- Add a `Closes` section with relevant issue links (GitHub, Linear, etc.).
-- For feature PRs, add `How to test` from a product/UX standpoint.
-- For bugfix PRs, use `How to reproduce` when helpful.
-- Optionally add a `What changed` section for implementation highlights.
-- Do not add a `How this was tested` section listing specs/commands.
+Use `pnpm test:watch` only for iteration. A single RSpec example can be run as
+`bundle exec rspec spec/path/to/file_spec.rb:LINE_NUMBER`.
 
-## Project-Specific
+## Code and test conventions
 
-- **Translations**:
-  - Only update `en.yml` and `en.json`
-  - Other languages are handled by the community
-  - Backend i18n → `en.yml`, Frontend i18n → `en.json`
-- **Frontend**:
-  - Use `components-next/` for message bubbles (the rest is being deprecated)
+- Ruby follows RuboCop and the configured 150-character limit. Use compact
+  module/class definitions rather than unnecessary nesting.
+- Vue components use PascalCase, emitted events use camelCase, and new Vue code
+  uses the Composition API with `<script setup>` at the top.
+- Use strong parameters at Rails boundaries and the repository's existing type
+  contracts in frontend code.
+- Validate model presence/uniqueness requirements and add indexes for new query
+  contracts.
+- Raise domain-specific exceptions from `lib/custom_exceptions/` where the
+  existing pattern applies.
+- Prefer `with_modified_env` over stubbing `ENV` directly in specs.
+- In parallel or reload-sensitive specs, compare `error.class.name` when
+  constant identity may legitimately differ.
+- Keep changes minimal and readable. Avoid speculative abstractions, redundant
+  guards, dead code, backup implementations, or tests unrelated to the issue.
+- Behavior changes require targeted regression coverage; tooling-only changes
+  require their deterministic tooling tests.
 
-## Ruby Best Practices
+## Frontend, styling, and translations
 
-- Use compact `module/class` definitions; avoid nested styles
+- Use Tailwind utility classes. Do not add custom, scoped, or inline CSS unless
+  an existing subsystem explicitly requires it.
+- Use colors from `tailwind.config.js`.
+- Do not place bare user-facing strings in templates; use i18n.
+- Update only English source translations: backend `en.yml`, frontend
+  `en.json`. Community translation files are not edited directly.
+- Use `components-next/` for message bubbles; the legacy surface is deprecated.
+- For white-label UI strings, use `replaceInstallationName` from
+  `shared/composables/useBranding` instead of hardcoding Chatwoot or Hablia.
 
-## Enterprise Edition Notes
+## Enterprise overlay
 
-- Chatwoot has an Enterprise overlay under `enterprise/` that extends/overrides OSS code.
-- When you add or modify core functionality, always check for corresponding files in `enterprise/` and keep behavior compatible.
-- Follow the Enterprise development practices documented here:
-  - https://chatwoot.help/hc/handbook/articles/developing-enterprise-edition-features-38
+Any core or public API change must be checked against `enterprise/`.
 
-Practical checklist for any change impacting core logic or public APIs
-- Search for related files in both trees before editing (e.g., `rg -n "FooService|ControllerName|ModelName" app enterprise`).
-- If adding new endpoints, services, or models, consider whether Enterprise needs:
-  - An override (e.g., `enterprise/app/...`), or
-  - An extension point (e.g., `prepend_mod_with`, hooks, configuration) to avoid hard forks.
-- Avoid hardcoding instance- or plan-specific behavior in OSS; prefer configuration, feature flags, or extension points consumed by Enterprise.
-- Keep request/response contracts stable across OSS and Enterprise; update both sets of routes/controllers when introducing new APIs.
-- When renaming/moving shared code, mirror the change in `enterprise/` to prevent drift.
-- Tests: Add Enterprise-specific specs under `spec/enterprise`, mirroring OSS spec layout where applicable.
-- When modifying existing OSS features for Enterprise-only behavior, add an Enterprise module (via `prepend_mod_with`/`include_mod_with`) instead of editing OSS files directly—especially for policies, controllers, and services. For Enterprise-exclusive features, place code directly under `enterprise/`.
+- Search matching controllers, services, models, policies, routes, and specs in
+  both trees before editing.
+- Prefer extension points such as `prepend_mod_with` or `include_mod_with`
+  for Enterprise-only behavior instead of hard-forking OSS code.
+- Keep routes and response contracts aligned. Add mirrored Enterprise specs
+  under `spec/enterprise` when the behavior differs there.
+- Do not hardcode instance- or plan-specific behavior in OSS code.
 
-## Branding / White-labeling note
+## Seeds and local worktrees
 
-- For user-facing strings that currently contain "Chatwoot" but should adapt to branded/self-hosted installs, prefer applying `replaceInstallationName` from `shared/composables/useBranding` in the UI layer (for example tooltip and suggestion labels) instead of adding hardcoded brand-specific copy.
+- `bundle exec rails db:seed` creates the minimal local data set.
+- `bundle exec rails search:setup_test_data` creates bulk search/load fixtures.
+- Rich account fixtures use `Seeders::AccountSeeder` through Super Admin or
+  `Internal::SeedAccountJob`; details are in the development reference.
+- Each worktree must use isolated database names, Rails/Vite ports, Redis DB
+  indexes, and Overmind sockets. Local generated settings remain ignored.
+
+## Security and external systems
+
+- Never commit or print credentials, OAuth tokens, cookies, service-account
+  files, encryption keys, customer content, PII, signed URLs, or secret values.
+- Treat PostgreSQL, Redis, email, social/messaging channels, storage, webhooks,
+  Captain/LLM providers, and external ticketing as side-effecting systems.
+- Diagnose read-only first. Verify account, workspace, project, and environment
+  before external writes.
+- Production, destructive operations, sends, deploys, data migrations,
+  financial actions, and paid generation require explicit confirmation.
+- Use fictional fixtures; never paste manually sanitized production data.
+
+## Linear routing
+
+The expected workspace is Hablia, with `HAB-` issues and team `Hablia-ai`.
+Before the first Linear write in a session, verify the workspace read-only. If a
+native integration resolves elsewhere, stop using it and select the
+project-scoped `linear-hablia` connector declared in `.mcp.json` and
+`.codex/config.toml`. Never create or update Hablia work in another workspace.
+
+## Git and delivery
+
+- Use Conventional Commits and include the issue in the description, for
+  example `chore(crm): migrate agent compatibility (HAB-526)`.
+- Do not mention an AI client in commit messages unless the client itself is
+  the product scope of the issue.
+- PR descriptions start with the user-facing outcome, link the issue, and
+  include product-oriented testing/reproduction steps plus required evidence.
+- Do not add a command dump titled “How this was tested”; put machine evidence
+  in the repository's expected PR evidence section.
+- The ignored `.agents/.pre-review-passed` marker must match the current diff
+  before a feature-branch push or PR creation.
+
+## Claude and Codex compatibility
+
+- Shared behavior lives in this file and neutral resources under `.agents/`
+  and `scripts/ai/`.
+- `CLAUDE.md`, `.claude/`, `.codex/`, and `.mcp.json` are discovery or
+  configuration adapters only. They must not redefine shared policy.
+- `CLAUDE.md` must remain a regular file that imports `@AGENTS.md`; do not
+  restore the historical symlink.
+- This repository currently has no local skills, specialized agents, plugins,
+  or slash commands. Add one only with a portable core, adapters for both
+  supported clients, drift validation, and an approved `AIC-EXC-NNN` entry
+  when safe equivalence is impossible.
+- Run the parity checker whenever an instruction, adapter, hook, MCP declaration,
+  manifest, or exception changes.

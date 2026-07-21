@@ -1,0 +1,12 @@
+[mcp_servers.linear-hablia]
+url = "https://mcp.linear.app/mcp"
+
+[[hooks.PreToolUse]]
+matcher = "^Bash$"
+
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = 'python3 "$(git rev-parse --show-toplevel)/scripts/ai/pre_review_gate.py"'
+command_windows = "powershell.exe -NoProfile -NonInteractive -Command \"& { $root = (& git rev-parse --show-toplevel).Trim(); & py -3 ($root + '\\\\scripts\\\\ai\\\\pre_review_gate.py') }\""
+timeout = 30
+statusMessage = "Verificando pre-review"

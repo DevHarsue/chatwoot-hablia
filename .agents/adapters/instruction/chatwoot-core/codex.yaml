@@ -1,0 +1,18 @@
+schema_version: 1
+resource:
+  type: "instruction"
+  name: "chatwoot-core"
+source: "AGENTS.md"
+client: "codex"
+outputs:
+  - "AGENTS.md"
+transformations: []
+capability_mapping:
+  repository_read: "Codex shared instructions"
+validation:
+  commands:
+    - "node scripts/ai/check-client-parity.mjs"
+drift:
+  strategy: "direct"
+owner: "Harwing Martinez y Francisco Maldonado"
+exception_ids: []

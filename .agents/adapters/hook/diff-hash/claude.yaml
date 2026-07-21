@@ -1,0 +1,20 @@
+schema_version: 1
+resource:
+  type: "hook"
+  name: "diff-hash"
+source: "scripts/ai/diff_hash.py"
+client: "claude"
+outputs:
+  - ".claude/hooks/diff_hash.py"
+transformations:
+  - "Keeps the Claude entrypoint as a wrapper around the portable script."
+capability_mapping: {}
+validation:
+  commands:
+    - "python3 scripts/ai/test_pre_review_gate.py"
+drift:
+  strategy: "sha256"
+  source_sha256: "cc2b804b14681d62f52b44f8cfd0bfc53121b707e412c010b63c5e122fa8005b"
+  output_sha256: "abe8667bd8a4865700e107d1c6f4a6298ac966dfcdd1738f06812f4150caf873"
+owner: "Harwing Martinez y Francisco Maldonado"
+exception_ids: []

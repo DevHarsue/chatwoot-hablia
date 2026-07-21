@@ -98,6 +98,21 @@ yarn-debug.log*
 .claude/
 CLAUDE.local.md
 
+# Version only the reviewed AI client adapters; keep all other client state local.
+!.codex/
+.codex/*
+!.codex/config.toml
+!.claude/
+.claude/*
+!.claude/settings.json
+!.claude/hooks/
+.claude/hooks/*
+!.claude/hooks/diff_hash.py
+!.claude/hooks/pre_review_gate.py
+.claude/.pre-review-passed
+.agents/.pre-review-passed
+scripts/ai/__pycache__/
+
 # Histoire deployment
 .netlify
 .histoire

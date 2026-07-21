@@ -1,0 +1,21 @@
+schema_version: 1
+resource:
+  type: "mcp"
+  name: "linear-hablia"
+source: ".agents/mcp/linear-hablia.md"
+client: "codex"
+outputs:
+  - ".codex/config.toml"
+transformations:
+  - "Renders the Codex MCP declaration without credentials and registers the portable pre-review gate."
+capability_mapping:
+  external_write: "Verified Hablia Linear workspace only"
+validation:
+  commands:
+    - "node scripts/ai/check-client-parity.mjs"
+drift:
+  strategy: "sha256"
+  source_sha256: "bdd0191134164bd388690a184bfde8c63e857a60cb5b5abf8671aaa5920a6223"
+  output_sha256: "3e7f613fd7a29f02170bd598e06caa9231068ae06f33f853afe898832ac3356f"
+owner: "Harwing Martinez y Francisco Maldonado"
+exception_ids: []

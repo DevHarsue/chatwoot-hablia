@@ -1,0 +1,56 @@
+name: AI client parity
+
+on:
+  pull_request:
+    paths:
+      - "AGENTS.md"
+      - "CLAUDE.md"
+      - ".mcp.json"
+      - ".agents/**"
+      - ".claude/**"
+      - ".codex/**"
+      - "plugins/**"
+      - "scripts/ai/**"
+      - "docs/devops/ai-*.md"
+      - "docs/devops/ai-*.yaml"
+      - "docs/ai/**"
+      - ".github/workflows/ai-client-parity.yml"
+  push:
+    branches: [develop]
+    paths:
+      - "AGENTS.md"
+      - "CLAUDE.md"
+      - ".mcp.json"
+      - ".agents/**"
+      - ".claude/**"
+      - ".codex/**"
+      - "plugins/**"
+      - "scripts/ai/**"
+      - "docs/devops/ai-*.md"
+      - "docs/devops/ai-*.yaml"
+      - "docs/ai/**"
+      - ".github/workflows/ai-client-parity.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parity:
+    name: Validate Claude x Codex parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: ""
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate parity contracts
+        run: node scripts/ai/check-client-parity.mjs
+      - name: Run parity fixtures
+        run: node scripts/ai/test_client_parity.mjs
+      - name: Run pre-review gate fixtures
+        run: python3 scripts/ai/test_pre_review_gate.py
