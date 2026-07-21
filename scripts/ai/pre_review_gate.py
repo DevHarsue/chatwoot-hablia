@@ -187,6 +187,13 @@ def main() -> int:
             "ni --work-tree. Ejecutalo desde el worktree revisado."
         )
     if is_push and re.search(
+        r"(?:^|\s)(?:-c(?:\s|[^\s&|;]+)|--config-env(?:=|\s))", command
+    ):
+        block(
+            "BLOCKED: el push no puede alterar la configuración temporal de Git. "
+            "Ejecutalo con el remoto origin revisado."
+        )
+    if is_push and re.search(
         r"(?:--(?:tags|delete|all|mirror|force(?:-with-lease)?)(?:=|\s|$)|"
         r"-[df](?:\s|$)|\s+[+][^\s&|;]+|\s+:[^\s&|;]+|:refs/tags/|"
         r":(?:refs/heads/)?(?:main|develop|release/[^\s&|;]+)|"
