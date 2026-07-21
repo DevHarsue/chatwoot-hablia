@@ -213,10 +213,34 @@ def main() -> int:
         assert_code(
             run_gate(
                 repo,
+                {"tool_input": {"command": "noglob git push origin feature/hook-test"}},
+            ),
+            2,
+            "rechaza noglob antes del push",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "nocorrect git push origin feature/hook-test"}},
+            ),
+            2,
+            "rechaza nocorrect antes del push",
+        )
+        assert_code(
+            run_gate(
+                repo,
                 {"tool_input": {"command": "/usr/bin/gh pr create --base main"}},
             ),
             2,
             "rechaza un launcher GitHub por ruta absoluta",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "noglob gh pr create --base main"}},
+            ),
+            2,
+            "rechaza noglob antes del PR",
         )
         assert_code(
             run_gate(

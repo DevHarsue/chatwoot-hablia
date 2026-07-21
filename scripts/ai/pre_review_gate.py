@@ -142,7 +142,8 @@ def main() -> int:
         )
     if re.search(
         r"(^|[&|;(\n])\s*(?:[A-Za-z_][A-Za-z0-9_]*=[^\s&|;]+\s+|"
-        r"exec\s+|(?:/[A-Za-z0-9._-]+)+/(?:git|gh)\b)",
+        r"(?:exec|noglob|nocorrect|builtin)\s+|"
+        r"(?:/[A-Za-z0-9._-]+)+/(?:git|gh)\b)",
         command,
     ):
         block(
