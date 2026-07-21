@@ -54,12 +54,17 @@ def command_from_payload(payload: object) -> str:
 
 def command_target_path(command: str) -> str | None:
     quoted = r'("[^"]+"|\'[^\']+\'|[^\s&|;]+)'
-    git_c = re.search(rf"git\s+-C\s+{quoted}", command)
+    git_candidates = list(re.finditer(rf"\s-C\s+{quoted}", command))
     shell_cd = re.match(rf"\s*cd\s+{quoted}", command)
-    match = git_c or shell_cd
-    if not match:
+    candidates = [*git_candidates, *([shell_cd] if shell_cd else [])]
+    if not candidates:
         return None
-    candidate = match.group(1).strip("\"'")
+    if len(candidates) != 1:
+        block(
+            "BLOCKED: el push/PR tiene más de un directorio candidato. "
+            "Ejecutalo desde el repositorio o usá un único git -C literal."
+        )
+    candidate = candidates[0].group(1).strip("\"'")
     if "$" in candidate or "%" in candidate:
         block(
             "BLOCKED: el push/PR usa una ruta con variable de shell. "
@@ -113,8 +118,8 @@ def main() -> int:
             "Ejecutá git o gh directamente, o usá `env git` / `command git`."
         )
     if is_push and re.search(
-        r"(?:--(?:tags|delete|all|mirror|force(?:-with-lease)?)(?:=|\s|$)|-d(?:\s|$)|"
-        r"\s+:[^\s&|;]+|:refs/tags/|"
+        r"(?:--(?:tags|delete|all|mirror|force(?:-with-lease)?)(?:=|\s|$)|"
+        r"-[df](?:\s|$)|\s+[+][^\s&|;]+|\s+:[^\s&|;]+|:refs/tags/|"
         r":(?:refs/heads/)?(?:main|develop|release/[^\s&|;]+)|"
         r"\s+(?:refs/heads/)?(?:main|develop|release/[^\s&|;]+)(?=[:\s]|$))",
         command,

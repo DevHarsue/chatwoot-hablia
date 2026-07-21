@@ -202,6 +202,11 @@ def main() -> int:
             "rechaza borrar refs con la opción corta",
         )
         assert_code(
+            run_gate(repo, {"tool_input": {"command": "git push -f origin feature/hook-test"}}),
+            2,
+            "rechaza force-push con la opción corta",
+        )
+        assert_code(
             run_gate(
                 repo,
                 {"tool_input": {"command": "git push origin :stale"}},
@@ -260,6 +265,14 @@ def main() -> int:
             "rechaza usar main como fuente de un refspec",
         )
         assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "git push origin +HEAD:feature/hook-test"}},
+            ),
+            2,
+            "rechaza un refspec forzado",
+        )
+        assert_code(
             run_gate(repo, {"tool_input": {"command": "git push --mirror origin"}}),
             2,
             "rechaza mirror push",
@@ -291,6 +304,20 @@ def main() -> int:
             run_gate(parent, {"tool_input": {"command": command}}),
             0,
             "resuelve una ruta literal con espacios",
+        )
+        assert_code(
+            run_gate(
+                parent,
+                {
+                    "tool_input": {
+                        "command": (
+                            f"git -C '{spaced}' -C '{repo}' push origin feature/hook-test"
+                        )
+                    }
+                },
+            ),
+            2,
+            "rechaza múltiples rutas Git candidatas",
         )
     print("OK: gate portable de pre-review validado")
     return 0
