@@ -55,7 +55,11 @@ def command_from_payload(payload: object) -> str:
 
 def command_target_path(command: str) -> str | None:
     quoted = r'("[^"]+"|\'[^\']+\'|[^\s&|;]+)'
-    git_candidates = list(re.finditer(rf"\s-C\s+{quoted}", command))
+    git_candidates: list[re.Match[str]] = []
+    for push_segment in re.finditer(r"\bgit\b[^&|;\n]*\bpush\b", command):
+        git_candidates.extend(
+            re.finditer(rf"\s-C\s+{quoted}", push_segment.group(0))
+        )
     shell_candidates = list(
         re.finditer(rf"(?<![A-Za-z0-9_.-])cd\s+{quoted}", command)
     )
@@ -146,6 +150,14 @@ def main() -> int:
     )
     if not is_push and not is_pr:
         return 0
+    operation_count = len(
+        re.findall(r"\bgit\b[^&|;\n]*\bpush\b|\bgh\s+pr\s+create\b", command)
+    )
+    if operation_count != 1:
+        block(
+            "BLOCKED: el comando contiene más de una publicación. "
+            "Ejecutá cada push o creación de PR por separado."
+        )
     if re.search(
         r"(^|[&|;\n])\s*(?:env|command)\s+(?!git\b|gh\b)", command
     ):

@@ -325,6 +325,21 @@ def main() -> int:
         marker.write_text(f"missing-base:{current_hash(repo)}\n", encoding="utf-8")
         assert_code(run_gate(repo, push), 2, "falla cerrado con una base inválida")
         write_marker(repo)
+        assert_code(
+            run_gate(
+                repo,
+                {
+                    "tool_input": {
+                        "command": (
+                            "git push origin feature/hook-test && "
+                            "git push attacker unreviewed"
+                        )
+                    }
+                },
+            ),
+            2,
+            "rechaza múltiples publicaciones en un comando",
+        )
 
         (repo / "tracked.txt").write_text("changed after review\n", encoding="utf-8")
         run(["git", "add", "tracked.txt"], repo)
@@ -366,6 +381,21 @@ def main() -> int:
             ),
             2,
             "rechaza múltiples directorios shell candidatos",
+        )
+        assert_code(
+            run_gate(
+                parent,
+                {
+                    "tool_input": {
+                        "command": (
+                            f"git -C '{spaced}' status && "
+                            "git push origin feature/hook-test"
+                        )
+                    }
+                },
+            ),
+            2,
+            "no reutiliza git -C de un subcomando previo",
         )
     print("OK: gate portable de pre-review validado")
     return 0
