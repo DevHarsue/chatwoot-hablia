@@ -197,6 +197,11 @@ def main() -> int:
             "rechaza borrar refs aun con marcador válido",
         )
         assert_code(
+            run_gate(repo, {"tool_input": {"command": "git push -d origin stale"}}),
+            2,
+            "rechaza borrar refs con la opción corta",
+        )
+        assert_code(
             run_gate(
                 repo,
                 {"tool_input": {"command": "git push origin :stale"}},
@@ -235,6 +240,24 @@ def main() -> int:
             ),
             2,
             "rechaza publicar hacia una release",
+        )
+        assert_code(
+            run_gate(repo, {"tool_input": {"command": "git push origin main"}}),
+            2,
+            "rechaza publicar desde main",
+        )
+        assert_code(
+            run_gate(repo, {"tool_input": {"command": "git push origin refs/heads/develop"}}),
+            2,
+            "rechaza publicar desde develop con ref explícita",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "git push origin main:feature/permitida"}},
+            ),
+            2,
+            "rechaza usar main como fuente de un refspec",
         )
         assert_code(
             run_gate(repo, {"tool_input": {"command": "git push --mirror origin"}}),

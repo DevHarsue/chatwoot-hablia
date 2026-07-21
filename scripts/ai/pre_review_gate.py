@@ -113,9 +113,10 @@ def main() -> int:
             "Ejecutá git o gh directamente, o usá `env git` / `command git`."
         )
     if is_push and re.search(
-        r"(?:--(?:tags|delete|all|mirror|force(?:-with-lease)?)(?:=|\s|$)|"
+        r"(?:--(?:tags|delete|all|mirror|force(?:-with-lease)?)(?:=|\s|$)|-d(?:\s|$)|"
         r"\s+:[^\s&|;]+|:refs/tags/|"
-        r":(?:refs/heads/)?(?:main|develop|release/[^\s&|;]+))",
+        r":(?:refs/heads/)?(?:main|develop|release/[^\s&|;]+)|"
+        r"\s+(?:refs/heads/)?(?:main|develop|release/[^\s&|;]+)(?=[:\s]|$))",
         command,
         re.IGNORECASE,
     ):
