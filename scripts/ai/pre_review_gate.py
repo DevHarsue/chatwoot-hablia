@@ -56,7 +56,7 @@ def command_from_payload(payload: object) -> str:
 def command_target_path(command: str) -> str | None:
     quoted = r'("[^"]+"|\'[^\']+\'|[^\s&|;]+)'
     git_candidates: list[re.Match[str]] = []
-    for push_segment in re.finditer(r"\bgit\b[^&|;\n]*\bpush\b", command):
+    for push_segment in re.finditer(r"\bgit\b[^&|;\n]*\spush(?=\s|$)", command):
         git_candidates.extend(
             re.finditer(rf"\s-C\s+{quoted}", push_segment.group(0))
         )
@@ -94,7 +94,7 @@ def is_direct_marker_write(command: str) -> bool:
 
 
 def push_uses_reviewed_source(command: str, branch: str) -> bool:
-    match = re.search(r"\bgit\b[^&|;\n]*\bpush\b(?P<args>[^&|;\n]*)", command)
+    match = re.search(r"\bgit\b[^&|;\n]*\spush(?=\s|$)(?P<args>[^&|;\n]*)", command)
     if not match:
         return False
     try:
@@ -143,7 +143,10 @@ def main() -> int:
 
     direct_prefix = r"(?:(?:env|command)(?:\s+[^\s&|;]+)*\s+)?"
     is_push = bool(
-        re.search(rf"(^|[&|;\n])\s*{direct_prefix}git\b[^&|;\n]*\bpush\b", command)
+        re.search(
+            rf"(^|[&|;(\n])\s*{direct_prefix}git\b[^&|;\n]*\spush(?=\s|$)",
+            command,
+        )
     )
     is_pr = bool(
         re.search(rf"(^|[&|;\n])\s*{direct_prefix}gh\s+pr\s+create\b", command)
@@ -151,7 +154,10 @@ def main() -> int:
     if not is_push and not is_pr:
         return 0
     operation_count = len(
-        re.findall(r"\bgit\b[^&|;\n]*\bpush\b|\bgh\s+pr\s+create\b", command)
+        re.findall(
+            r"\bgit\b[^&|;\n]*\spush(?=\s|$)|\bgh\s+pr\s+create\b",
+            command,
+        )
     )
     if operation_count != 1:
         block(

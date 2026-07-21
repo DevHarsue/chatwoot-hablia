@@ -110,6 +110,14 @@ def main() -> int:
 
         assert_code(run_gate(repo, push), 2, "bloquea push sin marcador")
         assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "(git push origin feature/hook-test)"}},
+            ),
+            2,
+            "bloquea un push literal entre paréntesis sin marcador",
+        )
+        assert_code(
             run_gate(repo, {"tool_input": {"command": "gh pr create --base main"}}),
             2,
             "bloquea PR sin marcador",
@@ -155,6 +163,14 @@ def main() -> int:
             ),
             2,
             "rechaza un wrapper de privilegios con argumentos",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "git config --get push.default"}},
+            ),
+            0,
+            "no confunde una clave de configuración con un push",
         )
         protected = create_repo(parent, "rama protegida")
         run(["git", "switch", "main"], protected)
