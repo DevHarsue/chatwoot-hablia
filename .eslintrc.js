@@ -28,6 +28,18 @@ module.exports = {
         'no-console': 'off',
       },
     },
+    {
+      // Node CLI scripts, not browser bundles: no regenerator-runtime concern,
+      // sequential for/await is the readable shape for per-file validation,
+      // and console output is the point of a CLI.
+      files: ['scripts/ai/**/*.mjs'],
+      rules: {
+        'no-console': 'off',
+        'no-continue': 'off',
+        'no-restricted-syntax': 'off',
+        'no-await-in-loop': 'off',
+      },
+    },
   ],
   plugins: ['html', 'prettier'],
   parserOptions: {
