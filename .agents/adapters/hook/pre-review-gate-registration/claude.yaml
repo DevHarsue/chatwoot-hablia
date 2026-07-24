@@ -21,6 +21,6 @@ validation:
 drift:
   strategy: "sha256"
   source_sha256: "a7302b8ebc6624eeab61c4c58a6e93f3a6ed2d638b6b68629046d481fed29ed9"
-  output_sha256: "ffb13e0865f7136a880f419f49ae6d5b8300703c393e2cc1b693ee55fe5804ef"
+  output_sha256: "d52f1b73ef5118112ae5e019d3bd72b10cd85d9364006dafc6e46e1dc0b48f44"
 owner: "Harwing Martinez y Francisco Maldonado"
 exception_ids: []

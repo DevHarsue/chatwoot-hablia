@@ -6,7 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre_review_gate.py\"",
+            "command": "${HABLIA_PYTHON3:-python3} \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre_review_gate.py\"",
+            "shell": "bash",
             "timeout": 30
           }
         ]

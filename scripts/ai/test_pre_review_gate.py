@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -120,6 +121,27 @@ def assert_windows_adapter(repo: Path, config: str) -> None:
         shell=True,
     )
     assert_code(result, 2, "el adaptador de Windows recibe el payload del gate")
+
+    claude_settings = json.loads(CLAUDE_SETTINGS.read_text(encoding="utf-8"))
+    claude_command = next(
+        hook["command"]
+        for registration in claude_settings["hooks"]["PreToolUse"]
+        for hook in registration["hooks"]
+        if "pre_review_gate.py" in hook.get("command", "")
+    )
+    # HABLIA_PYTHON3 simula lo que un dev de Windows configura una vez en
+    # settings.local.json. Usamos sys.executable (no "python3" literal) para no
+    # depender de que ese nombre exista en PATH en la máquina que corre el test.
+    claude_result = subprocess.run(
+        ["bash", "-c", claude_command],
+        cwd=repo,
+        text=True,
+        input=json.dumps({"tool_input": {"command": "git push origin feature/hook-test"}}),
+        capture_output=True,
+        check=False,
+        env={**os.environ, "CLAUDE_PROJECT_DIR": str(repo), "HABLIA_PYTHON3": sys.executable},
+    )
+    assert_code(claude_result, 2, "el adaptador de Claude en Windows recibe el payload del gate")
 
 
 def main() -> int:
@@ -241,6 +263,38 @@ def main() -> int:
             ),
             2,
             "rechaza noglob antes del PR",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "`git push origin feature/hook-test`"}},
+            ),
+            2,
+            "rechaza un push envuelto en backticks",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "$(git push origin feature/hook-test)"}},
+            ),
+            2,
+            "rechaza un push envuelto en sustitución de comando",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "`gh pr create --base main`"}},
+            ),
+            2,
+            "rechaza una creación de PR envuelta en backticks",
+        )
+        assert_code(
+            run_gate(
+                repo,
+                {"tool_input": {"command": "$(gh pr create --base main)"}},
+            ),
+            2,
+            "rechaza una creación de PR envuelta en sustitución de comando",
         )
         assert_code(
             run_gate(

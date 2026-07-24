@@ -21,6 +21,11 @@ from diff_hash import DiffHashError, diff_hash
 
 MARKER_RELATIVE_PATH = Path(".agents") / ".pre-review-passed"
 
+# Límite de inicio de comando: string start, separadores de shell, apertura de
+# subshell `(`/`$(`, y sustitución de comando con backtick. Compartido por todos
+# los checks de wrappers y por is_push/is_pr para que ninguno quede desalineado.
+COMMAND_BOUNDARY = r"(^|[&|;(`\n])"
+
 
 def block(message: str) -> None:
     sys.stderr.write(f"{message}\n")
@@ -131,7 +136,7 @@ def main() -> int:
         )
 
     if re.search(
-        r"(^|[&|;\n])\s*(?:sudo|doas|nice|nohup|time)(?:\s+[^\s&|;]+)*\s+(?:git|gh)\b",
+        rf"{COMMAND_BOUNDARY}\s*(?:sudo|doas|nice|nohup|time)(?:\s+[^\s&|;]+)*\s+(?:git|gh)\b",
         command,
     ):
         block(
@@ -139,7 +144,7 @@ def main() -> int:
             "Ejecutá git o gh directamente, o usá las formas literales documentadas."
         )
     if re.search(
-        r"(^|[&|;(\n])\s*(?:[A-Za-z_][A-Za-z0-9_]*=[^\s&|;]+\s+|"
+        rf"{COMMAND_BOUNDARY}\s*(?:[A-Za-z_][A-Za-z0-9_]*=[^\s&|;]+\s+|"
         r"(?:exec|noglob|nocorrect|builtin)\s+|"
         r"(?:/[A-Za-z0-9._-]+)+/(?:git|gh)\b)",
         command,
@@ -152,12 +157,12 @@ def main() -> int:
     direct_prefix = r"(?:(?:env|command)(?:\s+[^\s&|;]+)*\s+)?"
     is_push = bool(
         re.search(
-            rf"(^|[&|;(\n])\s*{direct_prefix}git\b[^&|;\n]*\spush(?=\s|$)",
+            rf"{COMMAND_BOUNDARY}\s*{direct_prefix}git\b[^&|;\n]*\spush(?=\s|$)",
             command,
         )
     )
     is_pr = bool(
-        re.search(rf"(^|[&|;\n])\s*{direct_prefix}gh\s+pr\s+create\b", command)
+        re.search(rf"{COMMAND_BOUNDARY}\s*{direct_prefix}gh\s+pr\s+create\b", command)
     )
     if not is_push and not is_pr:
         return 0
@@ -173,7 +178,7 @@ def main() -> int:
             "Ejecutá cada push o creación de PR por separado."
         )
     if re.search(
-        r"(^|[&|;\n])\s*(?:env|command)\s+(?!git\b|gh\b)", command
+        rf"{COMMAND_BOUNDARY}\s*(?:env|command)\s+(?!git\b|gh\b)", command
     ):
         block(
             "BLOCKED: el wrapper de publicación usa argumentos no verificables. "

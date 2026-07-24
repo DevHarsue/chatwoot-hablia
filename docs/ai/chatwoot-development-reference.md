@@ -100,6 +100,13 @@ mechanism on Windows. The parity checker verifies file type, import, hashes,
 adapter coverage, exception metadata, and common secret indicators without
 making network calls.
 
+The Claude hook registration in `.claude/settings.json` forces `"shell": "bash"`
+and resolves its interpreter as `${HABLIA_PYTHON3:-python3}`, mirroring the
+Codex adapter's `command_windows`. `python3` is not a standard command name on
+Windows; a Windows dev sets `HABLIA_PYTHON3` (for example `py -3` or `python`)
+once in `.claude/settings.local.json`'s `env` block. Unset, behavior is
+unchanged (`python3`, matching Mac/Linux).
+
 `REVIEW_GUIDELINES.md` is the client-neutral review contract for the portable
 pre-review. It defines severity, non-negotiable safety rules, validation
 expectations, and the review output format used before push or PR.
