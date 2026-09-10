@@ -27,9 +27,10 @@ class Public::Api::V1::InboxesController < PublicController
   def set_conversation
     return if params[:conversation_id].blank?
 
-    # Hablia (HAB-1051): scoped like ConversationsController#set_conversation. contact.conversations reached
-    # the contact's conversations in other inboxes (e.g. WhatsApp) by display_id.
-    conversations = @contact_inbox.hmac_verified? ? @contact_inbox.contact.conversations : @contact_inbox.conversations
-    @conversation = conversations.find_by!(display_id: params[:conversation_id])
+    @conversation = if @contact_inbox.hmac_verified?
+                      @contact_inbox.contact.conversations.find_by!(display_id: params[:conversation_id])
+                    else
+                      @contact_inbox.conversations.find_by!(display_id: params[:conversation_id])
+                    end
   end
 end
