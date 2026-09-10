@@ -36,10 +36,11 @@ class DeviseOverrides::PasswordsController < Devise::PasswordsController
   end
 
   def notify_password_reset(user)
-    HabliaWebhookService.deliver('set_new_password', {
+    payload = {
       user: { id: user.id, email: user.email, name: user.name },
       accounts: user.accounts.map { |acc| { id: acc.id, name: acc.name } }
-    })
+    }
+    HabliaWebhookService.deliver('set_new_password', payload)
   end
 
   def build_response(message, status)
