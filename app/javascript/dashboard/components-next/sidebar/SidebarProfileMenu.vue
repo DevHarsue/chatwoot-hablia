@@ -1,13 +1,10 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import Auth from 'dashboard/api/auth';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useI18n } from 'vue-i18n';
-import { useUISettings } from 'dashboard/composables/useUISettings';
 import Avatar from 'next/avatar/Avatar.vue';
 import SidebarProfileMenuStatus from './SidebarProfileMenuStatus.vue';
-import { FEATURE_FLAGS } from 'dashboard/featureFlags';
-import YearInReviewModal from 'dashboard/components-next/year-in-review/YearInReviewModal.vue';
 
 import {
   DropdownContainer,
@@ -17,6 +14,10 @@ import {
 } from 'next/dropdown-menu/base';
 import CustomBrandPolicyWrapper from '../../components/CustomBrandPolicyWrapper.vue';
 
+defineProps({
+  isCollapsed: { type: Boolean, default: false },
+});
+
 const emit = defineEmits(['close', 'openKeyShortcutModal']);
 
 defineOptions({
@@ -24,48 +25,12 @@ defineOptions({
 });
 
 const { t } = useI18n();
-const { uiSettings } = useUISettings();
 
 const currentUser = useMapGetter('getCurrentUser');
 const currentUserAvailability = useMapGetter('getCurrentUserAvailability');
-const accountId = useMapGetter('getCurrentAccountId');
-const globalConfig = useMapGetter('globalConfig/get');
-const isFeatureEnabledonAccount = useMapGetter(
-  'accounts/isFeatureEnabledonAccount'
-);
 
-const showYearInReviewModal = ref(false);
-
-const bannerClosedKey = computed(() => {
-  return `yir_closed_${accountId.value}_2025`;
-});
-
-const isBannerClosed = computed(() => {
-  return uiSettings.value?.[bannerClosedKey.value] === true;
-});
-
-const showYearInReviewMenuItem = computed(() => {
-  return isBannerClosed.value;
-});
-
-const openYearInReviewModal = () => {
-  showYearInReviewModal.value = true;
-  emit('close');
-};
-
-const closeYearInReviewModal = () => {
-  showYearInReviewModal.value = false;
-};
-
-const showChatSupport = computed(() => {
-  return (
-    isFeatureEnabledonAccount.value(
-      accountId.value,
-      FEATURE_FLAGS.CONTACT_CHATWOOT_SUPPORT_TEAM
-    ) && globalConfig.value.chatwootInboxToken
-  );
-});
-
+// Hablia: the profile menu only keeps profile settings and logout (no Chatwoot support, docs, changelog,
+// keyboard shortcuts, appearance or super admin console).
 const menuItems = computed(() => {
   return [
     {
@@ -91,11 +56,19 @@ const allowedMenuItems = computed(() => {
 </script>
 
 <template>
-  <DropdownContainer class="relative w-full min-w-0" @close="emit('close')">
+  <DropdownContainer
+    class="relative min-w-0"
+    :class="isCollapsed ? 'w-auto' : 'w-full'"
+    @close="emit('close')"
+  >
     <template #trigger="{ toggle, isOpen }">
       <button
-        class="flex gap-2 items-center p-1 w-full text-left rounded-lg cursor-pointer hover:bg-n-alpha-1"
-        :class="{ 'bg-n-alpha-1': isOpen }"
+        class="flex gap-2 items-center p-1 text-left rounded-lg cursor-pointer hover:bg-n-alpha-1"
+        :class="[
+          { 'bg-n-alpha-1': isOpen },
+          isCollapsed ? 'justify-center' : 'w-full',
+        ]"
+        :title="isCollapsed ? currentUser.available_name : undefined"
         @click="toggle"
       >
         <Avatar
@@ -104,9 +77,8 @@ const allowedMenuItems = computed(() => {
           :src="currentUser.avatar_url"
           :status="currentUserAvailability"
           class="flex-shrink-0"
-          rounded-full
         />
-        <div class="min-w-0">
+        <div v-if="!isCollapsed" class="min-w-0">
           <div class="text-sm font-medium leading-4 truncate text-n-slate-12">
             {{ currentUser.available_name }}
           </div>
@@ -128,9 +100,4 @@ const allowedMenuItems = computed(() => {
       </template>
     </DropdownBody>
   </DropdownContainer>
-
-  <YearInReviewModal
-    :show="showYearInReviewModal"
-    @close="closeYearInReviewModal"
-  />
 </template>
