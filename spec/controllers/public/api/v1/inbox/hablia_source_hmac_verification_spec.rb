@@ -24,6 +24,13 @@ RSpec.describe 'Public Inbox API source signature', type: :request do
   end
 
   describe 'with hmac_mandatory' do
+    it 'keeps serving the inbox details without the signature header' do
+      get inbox_path
+
+      expect(response).to have_http_status(:success)
+      expect(response.parsed_body['identifier']).to eq(api_channel.identifier)
+    end
+
     context 'with a valid signature for the source_id' do
       it 'serves the conversations and messages of the contact_inbox' do
         get "#{contact_path}/conversations", headers: owner_headers
