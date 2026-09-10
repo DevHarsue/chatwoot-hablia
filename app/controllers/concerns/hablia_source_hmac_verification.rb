@@ -26,6 +26,15 @@ module HabliaSourceHmacVerification
     ActiveSupport::SecurityUtils.secure_compare(expected, signature)
   end
 
+  # contacts#process_hmac with hmac_mandatory: the source signature (checked by verify_hablia_source_hmac) is the only
+  # credential. identifier_hash is never accepted and a contact can only be read (show), so this API cannot mark
+  # hmac_verified nor change a contact's identity.
+  def hablia_process_mandatory_hmac
+    return if action_name == 'show' && params[:identifier_hash].blank?
+
+    render_unauthorized('Invalid identifier hash')
+  end
+
   # Route segments are read from the path, so a query/body param signed for one's own source_id cannot stand in
   # for someone else's.
   def hablia_signed_source_id

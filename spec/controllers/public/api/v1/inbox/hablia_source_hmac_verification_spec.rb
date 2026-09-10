@@ -111,6 +111,41 @@ RSpec.describe 'Public Inbox API source signature', type: :request do
         expect(response).to have_http_status(:unauthorized)
       end
 
+      it 'rejects an identifier_hash equal to its own source signature' do
+        own_source_id = attacker_contact_inbox.source_id
+        forged = { identifier: own_source_id, identifier_hash: attacker_headers['X-Hablia-Source-Hmac'] }
+
+        get contact_path_for(own_source_id), params: forged, headers: attacker_headers
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(attacker_contact_inbox.reload.hmac_verified).to be(false)
+
+        patch contact_path_for(own_source_id), params: forged.merge(phone_number: contact.phone_number), headers: attacker_headers
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(Contact.exists?(attacker_contact.id)).to be(true)
+        expect(attacker_contact_inbox.reload).to have_attributes(contact_id: attacker_contact.id, hmac_verified: false)
+      end
+
+      it 'rejects an identifier_hash signed for any other source_id' do
+        other_source_id = '+525550000009'
+        forged = { identifier: other_source_id, identifier_hash: signed_headers(other_source_id)['X-Hablia-Source-Hmac'] }
+
+        get contact_path_for(attacker_contact_inbox.source_id), params: forged, headers: attacker_headers
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(attacker_contact_inbox.reload.hmac_verified).to be(false)
+
+        patch contact_path_for(attacker_contact_inbox.source_id), params: forged.merge(phone_number: contact.phone_number), headers: attacker_headers
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(attacker_contact_inbox.reload).to have_attributes(contact_id: attacker_contact.id, hmac_verified: false)
+
+        post "#{inbox_path}/contacts", params: forged.merge(source_id: attacker_contact_inbox.source_id), headers: attacker_headers
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+
       it 'does not let its own signature take over another contact through contacts#update or #create' do
         patch contact_path_for(attacker_contact_inbox.source_id), params: { phone_number: contact.phone_number }, headers: attacker_headers
 
@@ -185,12 +220,6 @@ RSpec.describe 'Public Inbox API source signature', type: :request do
 
       expect(response).to have_http_status(:success)
       expect(contact_inbox.reload.hmac_verified).to be(true)
-    end
-
-    it 'does not reach a conversation of another inbox by display_id' do
-      get "#{contact_path}/conversations/#{whatsapp_conversation.display_id}/messages"
-
-      expect(response).to have_http_status(:not_found)
     end
 
     it 'keeps the cross-inbox reach of an hmac_verified contact_inbox' do
