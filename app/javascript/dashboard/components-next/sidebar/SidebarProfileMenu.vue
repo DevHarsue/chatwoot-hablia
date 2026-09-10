@@ -18,7 +18,7 @@ defineProps({
   isCollapsed: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['close', 'openKeyShortcutModal']);
+const emit = defineEmits(['close']);
 
 defineOptions({
   inheritAttrs: false,
