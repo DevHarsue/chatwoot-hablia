@@ -29,6 +29,8 @@ class Public::Api::V1::Inboxes::ContactsController < Public::Api::V1::InboxesCon
   end
 
   def process_hmac
+    # Hablia (HAB-1051): with hmac_mandatory the X-Hablia-Source-Hmac signature is the only credential (see concern).
+    return hablia_process_mandatory_hmac if @inbox_channel.hmac_mandatory
     return if params[:identifier_hash].blank? && !@inbox_channel.hmac_mandatory
     raise StandardError, 'HMAC failed: Invalid Identifier Hash Provided' unless valid_hmac?
 

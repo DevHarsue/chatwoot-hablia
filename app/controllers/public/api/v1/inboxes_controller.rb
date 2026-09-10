@@ -1,5 +1,8 @@
 class Public::Api::V1::InboxesController < PublicController
+  include HabliaSourceHmacVerification
+
   before_action :set_inbox_channel
+  before_action :verify_hablia_source_hmac # Hablia (HAB-1051): before any contact_inbox lookup
   before_action :set_contact_inbox
   before_action :set_conversation
 
