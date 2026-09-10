@@ -28,9 +28,10 @@ class Public::Api::V1::Inboxes::ContactsController < Public::Api::V1::InboxesCon
   end
 
   def process_hmac
-    # Hablia (HAB-1051): with hmac_mandatory the X-Hablia-Source-Hmac signature authenticates the source_id,
-    # so identifier_hash stays optional (and remains the only way to mark hmac_verified).
-    return if params[:identifier_hash].blank? && (!@inbox_channel.hmac_mandatory || hablia_source_hmac_valid?)
+    # Hablia (HAB-1051): with hmac_mandatory, contacts#show accepts the X-Hablia-Source-Hmac signature instead of
+    # identifier_hash and never marks hmac_verified. update/create keep requiring identifier_hash: the end user holds
+    # the source signature and could otherwise merge into another contact through email/phone_number.
+    return if params[:identifier_hash].blank? && (!@inbox_channel.hmac_mandatory || (action_name == 'show' && hablia_source_hmac_valid?))
     raise StandardError, 'HMAC failed: Invalid Identifier Hash Provided' unless valid_hmac?
 
     @contact_inbox.update(hmac_verified: true) if @contact_inbox.present?

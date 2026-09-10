@@ -14,17 +14,20 @@ module HabliaSourceHmacVerification
     render_unauthorized('Invalid source signature') unless hablia_source_hmac_valid?
   end
 
+  # A params[:contact_id] other than the signed source_id is rejected too: set_contact_inbox reads it from the
+  # merged params, so on contacts routes a query/body contact_id would otherwise probe other source_ids (404/200).
   def hablia_source_hmac_valid?
     source_id = hablia_signed_source_id
     signature = request.headers[SOURCE_HMAC_HEADER]
-    return false if source_id.blank? || signature.blank?
+    return false unless source_id.is_a?(String) && source_id.present? && signature.present?
+    return false if params[:contact_id].present? && params[:contact_id] != source_id
 
-    expected = OpenSSL::HMAC.hexdigest('sha256', @inbox_channel.hmac_token, source_id.to_s)
+    expected = OpenSSL::HMAC.hexdigest('sha256', @inbox_channel.hmac_token, source_id)
     ActiveSupport::SecurityUtils.secure_compare(expected, signature)
   end
 
-  # The same param the controllers load the contact_inbox with. Route segments are read from the path, so a
-  # query param (?contact_id=, ?id=) signed for one's own source_id cannot stand in for someone else's.
+  # Route segments are read from the path, so a query/body param signed for one's own source_id cannot stand in
+  # for someone else's.
   def hablia_signed_source_id
     path = request.path_parameters
     return path[:contact_id] if path.key?(:contact_id) # contacts/:contact_id/conversations/...
